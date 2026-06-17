@@ -1,0 +1,4 @@
+interface:
+  display_name: "Klovr Share"
+  short_description: "Publish protected Klovr HTML artifact links"
+  default_prompt: "Publish this HTML artifact to Klovr Share with an expiry and optional password."
