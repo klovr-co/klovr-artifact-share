@@ -110,11 +110,37 @@ export function registerViewerRoutes(app: Express, dependencies: ViewerRouteDepe
 
     try {
       const object = await dependencies.objectStore.get(`artifacts/${artifact.slug}/assets/${assetPath}`);
-      if (typeof object === "string") {
-        response.status(200).type("html").send(object);
+      sendStoredObject(response, object, assetPath);
+    } catch (error) {
+      if (error instanceof ObjectNotFoundError) {
+        response.status(404).type("html").send(statusPage("Not found", "Artifact asset could not be found."));
         return;
       }
-      response.status(200).type(object.contentType).send(object.body);
+      throw error;
+    }
+  });
+
+  app.get(/^\/a\/([^/]+)\/(.+)$/, async (request, response) => {
+    const slug = request.params[0];
+    const assetPath = normalizeAssetPath(request.params[1] ?? "");
+    if (!assetPath) {
+      response.status(404).type("html").send(statusPage("Not found", "Artifact asset could not be found."));
+      return;
+    }
+
+    const artifact = await resolveVisibleArtifact(slug, response, dependencies);
+    if (!artifact) {
+      return;
+    }
+
+    if (artifact.passwordHash && !hasValidSession(request, artifact.slug, dependencies)) {
+      response.status(401).type("text").send("Password required");
+      return;
+    }
+
+    try {
+      const object = await dependencies.objectStore.get(`artifacts/${artifact.slug}/assets/${assetPath}`);
+      sendStoredObject(response, object, assetPath);
     } catch (error) {
       if (error instanceof ObjectNotFoundError) {
         response.status(404).type("html").send(statusPage("Not found", "Artifact asset could not be found."));
@@ -156,6 +182,20 @@ function hasValidSession(request: Request, slug: string, dependencies: ViewerRou
 
 function cookieName(slug: string): string {
   return `klovr_artifact_${slug}`;
+}
+
+function sendStoredObject(response: Response, object: Awaited<ReturnType<ObjectStore["get"]>>, path: string): void {
+  if (typeof object === "string") {
+    response.status(200).type("html").send(object);
+    return;
+  }
+
+  if (path.toLowerCase().endsWith(".html") || path.toLowerCase().endsWith(".htm")) {
+    response.status(200).type("html").send(object.body.toString("utf8"));
+    return;
+  }
+
+  response.status(200).type(object.contentType).send(object.body);
 }
 
 function shellPage(artifact: Artifact): string {

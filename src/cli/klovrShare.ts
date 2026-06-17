@@ -190,6 +190,9 @@ function contentTypeForPath(path: string): string {
       return "text/css; charset=utf-8";
     case "gif":
       return "image/gif";
+    case "htm":
+    case "html":
+      return "text/html; charset=utf-8";
     case "jpeg":
     case "jpg":
       return "image/jpeg";
