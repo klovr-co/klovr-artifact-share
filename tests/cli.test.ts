@@ -133,12 +133,18 @@ describe("readAssetsFromDirectory", () => {
     const directory = await mkdtemp(join(tmpdir(), "klovr-assets-"));
     await mkdir(join(directory, "images"));
     await writeFile(join(directory, "images", "hero.png"), Buffer.from("png-bytes"));
+    await writeFile(join(directory, "spec.html"), Buffer.from("<h1>Spec</h1>"));
 
     await expect(readAssetsFromDirectory(directory)).resolves.toEqual([
       {
         path: "images/hero.png",
         contentBase64: Buffer.from("png-bytes").toString("base64"),
         contentType: "image/png"
+      },
+      {
+        path: "spec.html",
+        contentBase64: Buffer.from("<h1>Spec</h1>").toString("base64"),
+        contentType: "text/html; charset=utf-8"
       }
     ]);
   });
