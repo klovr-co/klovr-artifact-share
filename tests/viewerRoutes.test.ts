@@ -97,6 +97,20 @@ describe("viewer routes", () => {
     expect(asset.text).toContain("<h1>Spec</h1>");
   });
 
+  it("serves root-relative bundled HTML pages as renderable HTML", async () => {
+    await seedArtifact({ passwordHash: null });
+    await objectStore.put(
+      "artifacts/demo/assets/speccing.html",
+      Buffer.from("<!doctype html><html><body><h1>Speccing</h1></body></html>"),
+      "application/octet-stream"
+    );
+    const app = testApp();
+
+    const sidecar = await request(app).get("/a/demo/speccing.html").expect(200);
+    expect(sidecar.header["content-type"]).toContain("text/html");
+    expect(sidecar.text).toContain("<h1>Speccing</h1>");
+  });
+
   it("does not serve bundled assets after expiry", async () => {
     await seedArtifact({
       passwordHash: null,
